@@ -1,0 +1,33 @@
+# /etc/conf.d/quffend: config file for /etc/init.d/quffend
+
+# Config file location
+#QUFFEND_CONFIGFILE="/etc/quffen/quffen.conf"
+
+# What directory to write pidfile to?  (created and owned by $QUFFEND_USER)
+#QUFFEND_PIDDIR="/var/run/quffend"
+
+# What filename to give the pidfile
+#QUFFEND_PIDFILE="${QUFFEND_PIDDIR}/quffend.pid"
+
+# Where to write quffend data (be mindful that the blockchain is large)
+#QUFFEND_DATADIR="/var/lib/quffend"
+
+# User and group to own quffend process
+#QUFFEND_USER="quffen"
+#QUFFEND_GROUP="quffen"
+
+# Path to quffend executable
+#QUFFEND_BIN="/usr/bin/quffend"
+
+# Nice value to run quffend under
+#QUFFEND_NICE=0
+
+# Additional options (avoid -conf and -datadir, use flags above)
+#QUFFEND_OPTS=""
+
+# The timeout in seconds OpenRC will wait for quffend to terminate
+# after a SIGTERM has been raised.
+# Note that this will be mapped as argument to start-stop-daemon's
+# '--retry' option, which means you can specify a retry schedule
+# here. For more information see man 8 start-stop-daemon.
+QUFFEND_SIGTERM_TIMEOUT=600

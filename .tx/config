@@ -1,0 +1,7 @@
+[main]
+host = https://www.transifex.com
+
+[o:quffen:p:quffen:r:qt-translation-025x]
+file_filter = src/qt/locale/quffen_<lang>.xlf
+source_file = src/qt/locale/quffen_en.xlf
+source_lang = en

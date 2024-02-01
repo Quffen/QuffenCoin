@@ -1,0 +1,93 @@
+#!/sbin/openrc-run
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/quffen/.quffen" ]; then
+	QUFFEND_DEFAULT_DATADIR="/var/lib/quffen/.quffen"
+else
+	QUFFEND_DEFAULT_DATADIR="/var/lib/quffend"
+fi
+
+QUFFEND_CONFIGFILE=${QUFFEND_CONFIGFILE:-/etc/quffen/quffen.conf}
+QUFFEND_PIDDIR=${QUFFEND_PIDDIR:-/var/run/quffend}
+QUFFEND_PIDFILE=${QUFFEND_PIDFILE:-${QUFFEND_PIDDIR}/quffend.pid}
+QUFFEND_DATADIR=${QUFFEND_DATADIR:-${QUFFEND_DEFAULT_DATADIR}}
+QUFFEND_USER=${QUFFEND_USER:-${QUFFEN_USER:-quffen}}
+QUFFEND_GROUP=${QUFFEND_GROUP:-quffen}
+QUFFEND_BIN=${QUFFEND_BIN:-/usr/bin/quffend}
+QUFFEND_NICE=${QUFFEND_NICE:-${NICELEVEL:-0}}
+QUFFEND_OPTS="${QUFFEND_OPTS:-${QUFFEN_OPTS}}"
+
+name="Quffen Core Daemon"
+description="Quffen cryptocurrency P2P network daemon"
+
+command="/usr/bin/quffend"
+command_args="-pid=\"${QUFFEND_PIDFILE}\" \
+		-conf=\"${QUFFEND_CONFIGFILE}\" \
+		-datadir=\"${QUFFEND_DATADIR}\" \
+		-daemon \
+		${QUFFEND_OPTS}"
+
+required_files="${QUFFEND_CONFIGFILE}"
+start_stop_daemon_args="-u ${QUFFEND_USER} \
+			-N ${QUFFEND_NICE} -w 2000"
+pidfile="${QUFFEND_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${QUFFEND_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${QUFFEND_USER}:${QUFFEND_GROUP}" \
+	"${QUFFEND_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${QUFFEND_USER}:${QUFFEND_GROUP}" \
+	"${QUFFEND_PIDDIR}"
+
+	checkpath -f \
+	-o "${QUFFEND_USER}:${QUFFEND_GROUP}" \
+	-m 0660 \
+	"${QUFFEND_CONFIGFILE}"
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if grep -qs '^rpcuser=' "${QUFFEND_CONFIGFILE}" && \
+		! grep -qs '^rpcpassword=' "${QUFFEND_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run quffend."
+		eerror "The setting must appear in ${QUFFEND_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following "
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Quffen Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

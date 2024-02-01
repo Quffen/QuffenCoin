@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+#
+#  quffend The quffen core server.
+#
+#
+# chkconfig: 345 80 20
+# description: quffend
+# processname: quffend
+#
+
+# Source function library.
+. /etc/init.d/functions
+
+# you can override defaults in /etc/sysconfig/quffend, see below
+if [ -f /etc/sysconfig/quffend ]; then
+        . /etc/sysconfig/quffend
+fi
+
+RETVAL=0
+
+prog=quffend
+# you can override the lockfile via QUFFEND_LOCKFILE in /etc/sysconfig/quffend
+lockfile=${QUFFEND_LOCKFILE-/var/lock/subsys/quffend}
+
+# quffend defaults to /usr/bin/quffend, override with QUFFEND_BIN
+quffend=${QUFFEND_BIN-/usr/bin/quffend}
+
+# quffend opts default to -disablewallet, override with QUFFEND_OPTS
+quffend_opts=${QUFFEND_OPTS--disablewallet}
+
+start() {
+    echo -n $"Starting $prog: "
+    daemon $DAEMONOPTS $quffend $quffend_opts
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop() {
+    echo -n $"Stopping $prog: "
+    killproc $prog -t600
+    RETVAL=$?
+    echo
+    [ $RETVAL -eq 0 ] && rm -f $lockfile
+    return $RETVAL
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status $prog
+        ;;
+    restart)
+        stop
+        start
+        ;;
+    *)
+        echo "Usage: service $prog {start|stop|status|restart}"
+        exit 1
+        ;;
+esac
